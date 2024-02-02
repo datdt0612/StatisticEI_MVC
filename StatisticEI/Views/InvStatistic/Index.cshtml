@@ -1,0 +1,78 @@
+﻿@using StatisticEI.ViewModels
+
+@model InvStatisticViewModel
+@{
+    ViewData["Title"] = "Invoice";
+}
+@section Style {
+    <link rel="stylesheet" href="~/lib/bootstrap-datepicker/css/bootstrap-datepicker.css" />
+}
+<form method="post" action="">
+    <div class="my-2">
+        <div class="mb-3 row">
+            <label for="staticEmail" class="col-sm-2 col-form-label">Ngày</label>
+            <div class="col-sm-3">
+                <input class="form-control" id="statistic-date" name="date" value="@Model.StatisticDate.ToString("dd/MM/yyyy")" />
+            </div>
+        </div>
+        @*Cập nhât từ: <strong>@(Model.StatisticDate.ToString("yyyy-MM-dd HH:mm:ss"))</strong>*@
+    </div>
+    <table class="table table-bordered">
+        <thead class="table-dark">
+            <tr>
+                <th scope="col">DB</th>
+                <th scope="col">Đã ký</th>
+                <th scope="col">Hợp lệ</th>
+                <th scope="col">Không hợp lệ</th>
+                <th scope="col">Đang kiểm tra</th>
+                <th scope="col">Lỗi</th>
+                <th scope="col">Ghi chú</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if ((!Model.StatisticResult?.DbStatistics?.Any()) ?? true)
+            {
+                <tr>
+                    <td colspan="5" class="text-center">Chưa có kết quả thống kê</td>
+                </tr>
+            }
+            else
+            {
+                foreach (var item in Model.StatisticResult!.DbStatistics!)
+                {
+                    <tr>
+                        <td>@Html.Raw(item.HasError ? $"<span class='badge bg-danger'>{item.DbId}</span>" : item.DbId)</td>
+                        <td>@item.SignedInvCount</td>
+                        <td>@item.TCTSuccessInvCount</td>
+                        <td>@item.TCTErrorInvCount</td>
+                        <td>@Html.Raw(item.TCTProcessInvCount > 0 ? $"<span class='badge bg-danger'>{item.TCTProcessInvCount}</span>" : "0")</td>
+                        <td>@Html.Raw(item.ErrorInvCount > 0 ? $"<span class='badge bg-danger'>{item.ErrorInvCount}</span>" : "0")</td>
+                        <td>@item.Note</td>
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+    <div>
+        <button type="button" id="export" class="btn btn-primary me-2">Xuất hóa đơn lỗi</button>
+    </div>
+</form>
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/bootstrap-datepicker/js/bootstrap-datepicker.js"></script>
+    <script type="text/javascript">
+        $("#statistic-date").datepicker({
+            format: 'dd/mm/yyyy',
+            autoclose: true
+        });
+        $("#statistic-date").on('change', function () {
+            $('form').attr('action', '/InvStatistic/Index');
+            $('form').submit();
+        });
+        $("#export").on('click', function () {
+            $('form').attr('action', '/InvStatistic/ExportErrorInvoice');
+            $('form').submit();
+        });
+    </script>
+}
+

@@ -1,0 +1,8 @@
+﻿{
+  //"QldvConn": "Data Source=172.16.10.66;initial catalog=hddt_qldv;User Id=sdshd;Password=sds@2017;",
+  "QldvConn": "Data Source=172.16.10.67;initial catalog=hddt_qldv_78;User Id=sa;Password=Hddt@2021##;MultipleActiveResultSets=True;TrustServerCertificate=True;",
+  "DataConns": [
+    "Data Source=172.16.10.67;initial catalog=hddt_data_78;User Id=sa;Password=Hddt@2021##;MultipleActiveResultSets=True;TrustServerCertificate=True;"
+  ],
+  "FromDate": "2023-01-17 09:15:48.0000000"
+}
