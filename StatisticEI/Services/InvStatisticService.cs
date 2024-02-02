@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using OfficeOpenXml;
+using OfficeOpenXml.Style;
 using Polly;
 using Polly.Contrib.WaitAndRetry;
 using StatisticEI.Models;
@@ -27,7 +28,7 @@ namespace StatisticEI.Services
             InvStatisticResult result = new() { DbStatistics = new List<DbStatistic>() };
             var lockObj = new object();
             //Parallel.ForEach(allDbs, (db) =>
-            foreach(var db in allDbs)
+            foreach (var db in allDbs)
             {
                 DbStatistic dbStatistic = new()
                 {
@@ -99,11 +100,7 @@ namespace StatisticEI.Services
         private List<InvoiceBase> GetSignedInv(string connectionString, DateTime date)
         {
             string sql = $@"select i.no, i.ComID, i.pattern, i.status, i.Serial, i.TCTCheckStatus, i.PublishDate from VATInvoice i
-                            inner join (
-                                    select distinct ComId, InvPattern, InvSerial from PublishInvoice p
-                                    where InvPattern like '%23%' and CashRegisterInv = 0 and SendDataBySummaryReport = 0) as p
-                                on i.ComId = p.ComId and i.pattern = p.InvPattern and i.Serial = p.InvSerial
-                            where (i.status >= 0 and i.status != 6) and (i.no > 0 or i.TCTCheckStatus is not null ) and i.PublishDate = '{date:yyyy-MM-dd}'";
+                            where (i.status > 0 or i.no > 0) and i.ArisingDate = '{date:yyyy-MM-dd}'";
             List<InvoiceBase> invoices = new List<InvoiceBase>();
 
             var delay = Backoff.ConstantBackoff(TimeSpan.FromMilliseconds(1000), retryCount: 5);
@@ -149,24 +146,9 @@ namespace StatisticEI.Services
 
                 foreach (var item in statistic?.DbStatistics ?? Enumerable.Empty<DbStatistic>())
                 {
-                    if(item.SignedInv == null)
+                    if (item.SignedInv == null)
                     {
                         continue;
-                    }
-
-                    var processInvoices = GetTCTProcessInv(item.SignedInv!).OrderBy(m => m.ComID).ThenBy(m => m.Pattern).ThenBy(m => m.No);
-
-                    foreach (var processInvoice in processInvoices)
-                    {
-                        ws.Cells["A" + row].Value = item.DbId;
-                        ws.Cells["B" + row].Value = processInvoice.ComID;
-                        ws.Cells["C" + row].Value = processInvoice.Pattern;
-                        ws.Cells["D" + row].Value = processInvoice.Serial;
-                        ws.Cells["E" + row].Value = processInvoice.No;
-                        ws.Cells["F" + row].Value = processInvoice.Status;
-                        ws.Cells["G" + row].Value = processInvoice.PublishDate;
-                        ws.Cells["H" + row].Value = processInvoice.TCTCheckStatus;
-                        row++;
                     }
 
                     var errorInvoices = GetErrorInv(item.SignedInv!).OrderBy(m => m.ComID).ThenBy(m => m.Pattern).ThenBy(m => m.No);
@@ -195,15 +177,17 @@ namespace StatisticEI.Services
         public InvStatisticResult? GetStatistic(DateTime date)
         {
             string path = Path.Combine(_hostEnvironment.ContentRootPath, "StatisticalResults", "Inv");
-            DirectoryInfo d = new(path);
-            var file = d.GetFiles("*.json").FirstOrDefault(m => m.Name == date.ToString("yyyyMMdd") + ".json");
-
-            if (file is not null)
+            if (!Directory.Exists(path))
             {
-                var result = JsonSerializer.Deserialize<InvStatisticResult>(File.ReadAllText(file.FullName));
-                return result;
+                Directory.CreateDirectory(path);
             }
-            return default;
+            DirectoryInfo d = new(path);
+            string fileName = date.ToString("yyyyMMdd") + ".json";
+            var file = d.GetFiles("*.json").FirstOrDefault(m => m.Name == fileName);
+            if (file is null)
+                Statistic(date);
+            var result = JsonSerializer.Deserialize<InvStatisticResult>(File.ReadAllText(path + "\\" + fileName));
+            return result;
         }
     }
 }

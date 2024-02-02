@@ -20,14 +20,14 @@ namespace StatisticEI.Controllers
                 StatisticDate = statisticDate,
                 StatisticResult = _invStatisticService.GetStatistic(statisticDate)
             };
-            return View(vm);
+            return View("/Views/InvStatistic/Index.cshtml", vm);
         }
 
         public IActionResult Statistic(string date)
         {
-            DateTime statisticDate = DateTime.Parse(date);
+            DateTime statisticDate = DateTime.ParseExact(date, "dd/MM/yyyy", CultureInfo.InvariantCulture);
             _invStatisticService.Statistic(statisticDate);
-            return RedirectToAction(nameof(Index), statisticDate);
+            return Index(date);
         }
 
         public IActionResult ExportErrorInvoice(string date)

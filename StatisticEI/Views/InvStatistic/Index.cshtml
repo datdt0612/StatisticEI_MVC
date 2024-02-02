@@ -54,6 +54,10 @@
         </tbody>
     </table>
     <div>
+        @if (Model.StatisticResult?.DbStatistics?.Sum(s => s.TCTErrorInvCount) > 0)
+        {
+            <button type="button" id="rescan" class="btn btn-primary me-2">Thống kê lại</button>
+        }
         <button type="button" id="export" class="btn btn-primary me-2">Xuất hóa đơn lỗi</button>
     </div>
 </form>
@@ -67,6 +71,10 @@
         });
         $("#statistic-date").on('change', function () {
             $('form').attr('action', '/InvStatistic/Index');
+            $('form').submit();
+        });
+        $("#rescan").on('click', function () {
+            $('form').attr('action', '/InvStatistic/Statistic');
             $('form').submit();
         });
         $("#export").on('click', function () {
